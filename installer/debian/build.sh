@@ -20,9 +20,10 @@ if [ -d "$BUILDDIR/$INSTALLDIR" ]; then
 fi
 
 # copy files in place
-sudo mkdir -p $BUILDDIR/$INSTALLDIR/
+sudo mkdir -p $BUILDDIR/$INSTALLDIR/lang
 sudo cp      ../../RemotePointerServer.py   $BUILDDIR/$INSTALLDIR/
 sudo cp -r   ../../res                      $BUILDDIR/$INSTALLDIR/res
+sudo cp -r   ../../lang/*.qm                $BUILDDIR/$INSTALLDIR/lang
 
 # make binary available in PATH
 sudo mkdir -p $BUILDDIR/usr/bin
