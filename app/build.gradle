@@ -37,6 +37,17 @@ android {
             dimension "appstore"
             minSdkVersion 21 // for Play billing library >= 7.0.0
         }
+        dev {
+            dimension "appstore"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            dependenciesInfo {
+                // Disables dependency metadata when building APKs.
+                includeInApk = false
+                // Disables dependency metadata when building Android App Bundles.
+                includeInBundle = false
+            }
+        }
     }
     namespace 'systems.sieber.remotespotlight'
 }
