@@ -94,7 +94,14 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
             edit.apply();
         }
 
-        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        RemoteKeyboardEditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        keyboardText.setOnEmptyBackspaceListener(() -> {
+            if(fc == null || !fc.unlockedKeyboard) {
+                dialogInApp(getResources().getString(R.string.feature_locked_keyboard), getResources().getString(R.string.feature_locked_text));
+                return;
+            }
+            sendBackspace();
+        });
         keyboardText.addTextChangedListener(new TextWatcher() {
             private String removedText = "";
 
@@ -112,9 +119,9 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
                     return;
                 }
 
-                int removedCodePoints = removedText.codePointCount(0, removedText.length());
+                int removedCodePoints = keyboardText.userCodePointCount(removedText);
                 for(int i = 0; i < removedCodePoints; i++) sendBackspace();
-                sendImmediateText(s.subSequence(start, start + count).toString());
+                sendImmediateText(keyboardText.withoutSentinel(s.subSequence(start, start + count)));
             }
 
             @Override
@@ -504,11 +511,11 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     }
 
     private void clearKeyboardText() {
-        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
-        if(keyboardText.length() == 0) return;
+        RemoteKeyboardEditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        if(!keyboardText.hasUserText()) return;
 
         ignoreKeyboardTextChanges = true;
-        keyboardText.setText("");
+        keyboardText.clearUserText();
         ignoreKeyboardTextChanges = false;
     }
 

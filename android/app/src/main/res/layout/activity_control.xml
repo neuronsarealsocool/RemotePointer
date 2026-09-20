@@ -164,7 +164,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <EditText
+        <systems.sieber.remotespotlight.RemoteKeyboardEditText
             android:id="@+id/editTextControlKeyboardText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
