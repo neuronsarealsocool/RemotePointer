@@ -1,35 +1,16 @@
-# RemotePointer
+# RemotePointer-Android (Client/App)
+[![Play Store](.github/playstore-badge.svg)](https://play.google.com/store/apps/details?id=systems.sieber.remotespotlight)
+[![APK Download](.github/apk-badge.svg)](https://github.com/schorschii/RemotePointer-Android/releases)
 
-RemotePointer lets an Android phone control a computer's mouse and keyboard, display a digital laser pointer, and send scanned barcode or QR code data.
+Client application for the [RemotePointer Server](https://github.com/schorschii/RemotePointer-Server).
 
-This monorepo combines the Android client and cross-platform desktop server while preserving the history of both projects.
+With RemotePointer you can use your smartphone to control your Linux, macOS or Windows computer's keyboard and mouse (using a touchpad). In addition to that, you can project a digital laser pointer dot on your screen or projector, which is controlled by the movement of your Android device. Furthermore, you can use your smartphone as barcode/QR code scanner for your computer.
 
-## Projects
+The goal of this project is to provide an easy-to-use, platform independent, open source remote control application without dependencies to external servers and without tracking. If you like this project, please support the development by purchasing one of the in-app purchases in the Play Store or via Github sponsoring if you use the direct APK download.
 
-- [`android/`](android/) - Android client, including the `devDebug` build with development-only feature access.
-- [`windows/`](windows/) - Python/PyQt desktop server for Windows, Linux, and macOS.
-
-## Android development build
-
-Set `sdk.dir` in `android/local.properties`, then build from the repository root:
-
-```powershell
-cd android
-.\gradlew.bat :app:assembleDevDebug
-```
-
-The APK is written to `android/app/build/outputs/apk/dev/debug/remotepointer.apk` and uses the separate package ID `systems.sieber.remotespotlight.dev`.
-
-## Windows development build
-
-```powershell
-cd windows
-python -m venv venv
-.\venv\Scripts\pip.exe install -r requirements.txt pyinstaller
-lrelease .\lang\de.ts
-.\venv\Scripts\pyinstaller.exe --clean --noconfirm RemotePointerServer.windows.spec
-```
-
-The `lrelease` command is supplied by Qt and generates the translation catalog required by the PyInstaller spec. The application is written to `windows/dist/RemotePointerServer/RemotePointerServer.exe`.
-
-See the README and license in each project directory for upstream project details.
+<p float="left">
+<img alt="Computer selection" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" height="380">
+<img alt="Mouse and laserpointer control" src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" height="380">
+<img alt="Keyboard control" src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" height="380">
+<img alt="Barcode scanner" src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" height="380">
+</p>
