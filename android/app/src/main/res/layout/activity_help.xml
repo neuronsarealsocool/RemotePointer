@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".HelpActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:showIn="@layout/activity_conn"
+        android:id="@+id/helpMainView">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginBottom="0dp"
+                android:layout_marginTop="0dp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:src="@drawable/logo"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginStart="16dp"
+                    android:contentDescription="Georg Sieber Logo"
+                    tools:ignore="HardcodedText" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp" />
+
+                <TextView
+                    android:id="@+id/textViewVersion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/desktopapp_ver"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/copyright"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+                <Space
+                    android:layout_width="wrap_content"
+                    android:layout_height="16dp" />
+
+                <GridLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/website"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                        android:layout_column="0"
+                        android:layout_row="0" />
+
+                    <Button
+                        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:onClick="onClickWebLink"
+                        android:text="@string/website_url"
+                        android:textAllCaps="false"
+                        android:layout_column="1"
+                        android:layout_row="0" />
+
+                    <!-- autolink email not working on HUAWEI P10 :-( -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:onClick="onClickEmailLink"
+                        android:text="@string/email"
+                        android:textAllCaps="false"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                        android:layout_column="0"
+                        android:layout_row="1" />
+
+                    <Button
+                        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:onClick="onClickEmailLink"
+                        android:text="@string/email_address"
+                        android:textAllCaps="false"
+                        android:layout_column="1"
+                        android:layout_row="1" />
+
+                </GridLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/features"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alignmentMode="alignBounds"
+                    android:columnCount="5">
+                    <ImageView
+                        android:id="@+id/imageViewBuyKeyboard"
+                        android:layout_row="0"
+                        android:layout_column="0"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_lock_dynamic_24dp"
+                        android:gravity="center"
+                        android:layout_gravity="fill_horizontal"
+                        android:contentDescription="@string/buy_now" />
+                    <Space
+                        android:layout_row="0"
+                        android:layout_column="1"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent" />
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent"
+                        android:layout_row="0"
+                        android:layout_column="2"
+                        android:gravity="center"
+                        android:layout_gravity="fill_horizontal">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/keyboard"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/keyboard_description" />
+                    </LinearLayout>
+                    <Space
+                        android:layout_row="0"
+                        android:layout_column="3"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent" />
+
+                    <Button
+                        android:id="@+id/buttonBuyKeyboard"
+                        style="@style/Widget.AppCompat.Button.Colored"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_row="0"
+                        android:layout_column="4"
+                        android:layout_gravity="center_vertical"
+                        android:enabled="false"
+                        android:text="@string/buy_now" />
+                </GridLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alignmentMode="alignBounds"
+                    android:columnCount="5">
+                    <ImageView
+                        android:id="@+id/imageViewBuyScanner"
+                        android:layout_row="0"
+                        android:layout_column="0"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_lock_dynamic_24dp"
+                        android:gravity="center"
+                        android:layout_gravity="fill_horizontal"
+                        android:contentDescription="@string/buy_now" />
+                    <Space
+                        android:layout_row="0"
+                        android:layout_column="1"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent" />
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent"
+                        android:layout_row="0"
+                        android:layout_column="2"
+                        android:gravity="center"
+                        android:layout_gravity="fill_horizontal">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/barcode_scanner"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/barcode_scanner_description" />
+                    </LinearLayout>
+                    <Space
+                        android:layout_row="0"
+                        android:layout_column="3"
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent" />
+
+                    <Button
+                        android:id="@+id/buttonBuyScanner"
+                        style="@style/Widget.AppCompat.Button.Colored"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_row="0"
+                        android:layout_column="4"
+                        android:layout_gravity="center_vertical"
+                        android:enabled="false"
+                        android:text="@string/buy_now" />
+                </GridLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/help"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/help_text" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/open_source"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/open_source_text" />
+                <Button
+                    style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:layout_gravity="center"
+                    android:text="@string/repo_url"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAllCaps="false"
+                    android:onClick="showOnGithub" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/third_party_components"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/third_party_components_text" />
+                <Button
+                    style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                    android:layout_gravity="center"
+                    android:text="@string/apache_license"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAllCaps="false"
+                    android:onClick="showApacheLicense" />
+
+                <Space
+                    android:layout_width="wrap_content"
+                    android:layout_height="16dp" />
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

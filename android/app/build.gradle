@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+
+android {
+    defaultConfig {
+        applicationId "systems.sieber.remotespotlight"
+        minSdk 21 // for Play billing library >= 7.0.0, otherwise 15
+        targetSdk 36
+        compileSdk 36
+        versionCode 24
+        versionName "3.2"
+        multiDexEnabled true
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    output.outputFileName = 'remotepointer.apk'
+                }
+            }
+        }
+    }
+    flavorDimensions "appstore"
+    productFlavors {
+        standalone {
+            dimension "appstore"
+            dependenciesInfo {
+                // Disables dependency metadata when building APKs.
+                includeInApk = false
+                // Disables dependency metadata when building Android App Bundles.
+                includeInBundle = false
+            }
+        }
+        google {
+            dimension "appstore"
+            minSdkVersion 21 // for Play billing library >= 7.0.0
+        }
+        dev {
+            dimension "appstore"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            dependenciesInfo {
+                // Disables dependency metadata when building APKs.
+                includeInApk = false
+                // Disables dependency metadata when building Android App Bundles.
+                includeInBundle = false
+            }
+        }
+    }
+    namespace 'systems.sieber.remotespotlight'
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'me.dm7.barcodescanner:zxing:1.9.8'
+    googleImplementation 'com.android.billingclient:billing:8.0.0'
+}
