@@ -26,9 +26,10 @@ The APK is written to `android/app/build/outputs/apk/dev/debug/remotepointer.apk
 cd windows
 python -m venv venv
 .\venv\Scripts\pip.exe install -r requirements.txt pyinstaller
+lrelease .\lang\de.ts
 .\venv\Scripts\pyinstaller.exe --clean --noconfirm RemotePointerServer.windows.spec
 ```
 
-The application is written to `windows/dist/RemotePointerServer/RemotePointerServer.exe`.
+The `lrelease` command is supplied by Qt and generates the translation catalog required by the PyInstaller spec. The application is written to `windows/dist/RemotePointerServer/RemotePointerServer.exe`.
 
 See the README and license in each project directory for upstream project details.
