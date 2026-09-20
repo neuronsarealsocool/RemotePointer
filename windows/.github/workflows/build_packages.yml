@@ -1,0 +1,271 @@
+name: Release with packages
+
+on:
+  workflow_dispatch: # allow manual execution
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create_release_deb: # used to identify the output in other jobs
+    name: Create Release with Debian package
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt install -y qttools5-dev-tools qtchooser python3-tk python3-dev $(cat installer/debian/remotepointer/DEBIAN/control | grep 'Depends' | cut -d: -f2 | sed -e 's/,/ /g' | sed -r 's/\([<>=.0-9]+\)//g')
+
+      - name: Compile language files
+        run: make
+
+      - name: Create venv, install Python packages, compile binaries
+        run: |
+          python3 -m venv venv
+          venv/bin/pip3 install pyinstaller
+          venv/bin/pip3 install -r requirements.txt
+          venv/bin/pyinstaller RemotePointerServer.linux.spec
+
+      - name: Execute package build
+        run: cd installer/debian/ && ./build.sh
+
+      - name: Get version name for Github release title
+        run: echo "VERSION=Version $(venv/bin/python3 -c 'import RemotePointerServer; print(RemotePointerServer.APP_VERSION)')" >> $GITHUB_ENV
+
+      - id: create_release
+        name: Create Github release
+        uses: actions/create-release@v1
+        env:
+          # this token is provided automatically by Actions with permissions declared above
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true # create a release draft - only the master of disaster is allowed to publish it
+          prerelease: false
+          release_name: ${{ env.VERSION }}
+          tag_name: ${{ github.ref }}
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: installer/debian/remotepointer.deb
+          asset_name: remotepointer.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: Share compiled translation files with other runner
+        uses: actions/upload-artifact@master
+        with:
+          name: translations
+          path: lang/
+
+  create_pkg:
+    name: Create macOS package
+    runs-on: macos-14-large
+    needs: create_release_deb
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Importing signing certificates
+        run: |
+          # create and unlock temporary keychain
+          KEYCHAIN_NAME=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PASS=$(head -c 8 /dev/urandom | od -An -tu8 | awk '{$1=$1};1')
+          security create-keychain -p $KEYCHAIN_PASS $KEYCHAIN_NAME
+          security default-keychain -s $KEYCHAIN_NAME
+          security set-keychain-settings -lut 21600 $KEYCHAIN_NAME
+          security unlock-keychain -p $KEYCHAIN_PASS $KEYCHAIN_NAME
+
+          # add certificate to keychain
+          CERT_FILE=build.p12
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION_CERT_BASE64 }}" | base64 --decode > $CERT_FILE
+          security import $CERT_FILE -k $KEYCHAIN_NAME -P "${{ secrets.DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}" -T /usr/bin/codesign >/dev/null 2>&1
+          rm -fr $CERT_FILE
+          #security find-identity -v  #-p codesigning
+
+          # enable codesigning from a non user interactive shell
+          security set-key-partition-list -S apple-tool:,apple: -s -k $KEYCHAIN_PASS $KEYCHAIN_NAME >/dev/null 2>&1
+
+      - name: Remove lang dir
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: lang/
+
+      - name: Get compiled translation files
+        uses: actions/download-artifact@master
+        with:
+          name: translations
+          path: lang/
+
+      - name: Create venv, install Python packages, compile binaries
+        run: |
+          python -m venv venv
+          venv/bin/pip3 install pyinstaller pillow
+          venv/bin/pip3 install -r requirements.txt
+          venv/bin/pyinstaller RemotePointerServer.macos.spec
+
+      - name: Execute package build
+        run: cd installer/macos/ && ./build.sh
+        env:
+          DEVELOPER_ACCOUNT_USERNAME: ${{ secrets.DEVELOPER_ACCOUNT_USERNAME }}
+          DEVELOPER_ACCOUNT_PASSWORD: ${{ secrets.DEVELOPER_ACCOUNT_PASSWORD }}
+          DEVELOPER_ACCOUNT_TEAM: ${{ secrets.DEVELOPER_ACCOUNT_TEAM }}
+
+      - name: Purging signing keychain
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release_deb.outputs.upload_url }}
+          asset_path: installer/macos/target/pkg/RemotePointer.pkg
+          asset_name: RemotePointer-x86.pkg
+          asset_content_type: application/octet-stream
+
+  create_pkg_arm:
+    name: Create macOS package
+    runs-on: macos-14-xlarge
+    needs: create_release_deb
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Importing signing certificates
+        run: |
+          # create and unlock temporary keychain
+          KEYCHAIN_NAME=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PASS=$(head -c 8 /dev/urandom | od -An -tu8 | awk '{$1=$1};1')
+          security create-keychain -p $KEYCHAIN_PASS $KEYCHAIN_NAME
+          security default-keychain -s $KEYCHAIN_NAME
+          security set-keychain-settings -lut 21600 $KEYCHAIN_NAME
+          security unlock-keychain -p $KEYCHAIN_PASS $KEYCHAIN_NAME
+
+          # add certificate to keychain
+          CERT_FILE=build.p12
+          echo "${{ secrets.DEVELOPER_ID_APPLICATION_CERT_BASE64 }}" | base64 --decode > $CERT_FILE
+          security import $CERT_FILE -k $KEYCHAIN_NAME -P "${{ secrets.DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}" -T /usr/bin/codesign >/dev/null 2>&1
+          rm -fr $CERT_FILE
+          #security find-identity -v  #-p codesigning
+
+          # enable codesigning from a non user interactive shell
+          security set-key-partition-list -S apple-tool:,apple: -s -k $KEYCHAIN_PASS $KEYCHAIN_NAME >/dev/null 2>&1
+
+      - name: Remove lang dir
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: lang/
+
+      - name: Get compiled translation files
+        uses: actions/download-artifact@master
+        with:
+          name: translations
+          path: lang/
+
+      - name: Create venv, install Python packages, compile binaries
+        run: |
+          python -m venv venv
+          venv/bin/pip3 install pyinstaller pillow
+          venv/bin/pip3 install -r requirements.txt
+          venv/bin/pyinstaller RemotePointerServer.macos.spec
+
+      - name: Execute package build
+        run: cd installer/macos/ && ./build.sh
+        env:
+          DEVELOPER_ACCOUNT_USERNAME: ${{ secrets.DEVELOPER_ACCOUNT_USERNAME }}
+          DEVELOPER_ACCOUNT_PASSWORD: ${{ secrets.DEVELOPER_ACCOUNT_PASSWORD }}
+          DEVELOPER_ACCOUNT_TEAM: ${{ secrets.DEVELOPER_ACCOUNT_TEAM }}
+
+      - name: Purging signing keychain
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release_deb.outputs.upload_url }}
+          asset_path: installer/macos/target/pkg/RemotePointer.pkg
+          asset_name: RemotePointer-arm64.pkg
+          asset_content_type: application/octet-stream
+
+  create_exe:
+    name: Create Windows package
+    runs-on: windows-2022
+    needs: create_release_deb
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Remove lang dir
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: lang/
+
+      - name: Get compiled translation files
+        uses: actions/download-artifact@master
+        with:
+          name: translations
+          path: lang/
+
+      - name: Create venv, install Python packages, compile binaries
+        run: |
+          python -m venv venv
+          venv/Scripts/pip.exe install pyinstaller==5.13.2
+          venv/Scripts/pip.exe install -r requirements.txt
+          venv/Scripts/pyinstaller.exe RemotePointerServer.windows.spec
+
+      - name: Execute package build
+        shell: cmd
+        run: cd installer\windows\ && "%programfiles(x86)%\Inno Setup 6\iscc.exe" "setup.iss"
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release_deb.outputs.upload_url }}
+          asset_path: installer/windows/remotepointer-setup.exe
+          asset_name: remotepointer.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
