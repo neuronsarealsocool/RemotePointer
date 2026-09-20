@@ -40,7 +40,8 @@ android {
         dev {
             dimension "appstore"
             applicationIdSuffix ".dev"
-            versionNameSuffix "-dev"
+            versionCode 25
+            versionNameSuffix "-dev.2"
             dependenciesInfo {
                 // Disables dependency metadata when building APKs.
                 includeInApk = false
