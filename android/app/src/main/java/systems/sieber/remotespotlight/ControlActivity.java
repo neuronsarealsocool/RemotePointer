@@ -20,9 +20,13 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.text.Editable;
+import android.text.TextWatcher;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
@@ -33,7 +37,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -56,6 +59,8 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     boolean mSyncClipboard;
 
     boolean sendValues = false;
+    boolean ignoreKeyboardTextChanges = false;
+    boolean keyboardWasVisible = false;
 
     String mAddress;
     int mPort;
@@ -88,64 +93,38 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
             edit.apply();
         }
 
-        // set up InputView
-        final View et = findViewById(R.id.editTextControlKeyboardImmediately);
-        et.setOnKeyListener(new View.OnKeyListener() {
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        keyboardText.addTextChangedListener(new TextWatcher() {
+            private String removedText = "";
+
             @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if(event.getAction() == KeyEvent.ACTION_UP) {
-                    return false;
-                }
-                char unicodeChar = (char) event.getUnicodeChar();
-                if(keyCode == KeyEvent.KEYCODE_ENTER) {
-                    // handle ENTER
-                    Log.i("KEYEVENT", "ENTER");
-                    sendReturn();
-                    return true;
-                } else if(keyCode == KeyEvent.KEYCODE_DEL) {
-                    // handle DEL
-                    Log.i("KEYEVENT", "DEL");
-                    sendBackspace();
-                    return true;
-                } else if(unicodeChar != 0) {
-                    // handle normal chars
-                    Log.i("KEYEVENT", "CHAR:" + unicodeChar);
-                    if(fc == null || !fc.unlockedKeyboard) {
-                        dialogInApp(getResources().getString(R.string.feature_locked_keyboard), getResources().getString(R.string.feature_locked_text));
-                        return true;
-                    }
-                    sendMessage(unicodeChar + "");
-                    return true;
-                }
-                // handle special chars (non-ASCII)
-                Log.i("KEYEVENT", "CHARS:"+event.getCharacters());
-                if(event.getCharacters() == null) return false;
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                removedText = s.subSequence(start, start + count).toString();
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if(ignoreKeyboardTextChanges) return;
+                if(before == 0 && count == 0) return;
                 if(fc == null || !fc.unlockedKeyboard) {
                     dialogInApp(getResources().getString(R.string.feature_locked_keyboard), getResources().getString(R.string.feature_locked_text));
-                    return true;
+                    return;
                 }
-                sendMessage(event.getCharacters() + "");
-                return true;
+
+                int removedCodePoints = removedText.codePointCount(0, removedText.length());
+                for(int i = 0; i < removedCodePoints; i++) sendBackspace();
+                sendImmediateText(s.subSequence(start, start + count).toString());
             }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
         });
 
-        CheckBox cb = findViewById(R.id.checkBoxControlKeyboardSendImmediately);
-        cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
-                    findViewById(R.id.viewKeyboardInput).setVisibility(View.VISIBLE);
-                    findViewById(R.id.editTextControlKeyboardText).setVisibility(View.GONE);
-                    findViewById(R.id.buttonSendText).setVisibility(View.INVISIBLE);
-                    findViewById(R.id.viewKeyboardInput).requestFocus();
-                    showKeyboard();
-                } else {
-                    findViewById(R.id.viewKeyboardInput).setVisibility(View.GONE);
-                    findViewById(R.id.editTextControlKeyboardText).setVisibility(View.VISIBLE);
-                    findViewById(R.id.buttonSendText).setVisibility(View.VISIBLE);
-                    findViewById(R.id.editTextControlKeyboardText).requestFocus();
-                }
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.controlMainView), (view, insets) -> {
+            boolean keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            if(keyboardWasVisible && !keyboardVisible) clearKeyboardText();
+            keyboardWasVisible = keyboardVisible;
+            return insets;
         });
 
         (findViewById(R.id.buttonSpotlight)).setOnTouchListener(new View.OnTouchListener() {
@@ -377,11 +356,13 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     }
 
     private void showKeyboard() {
+        View inputView = findViewById(R.id.editTextControlKeyboardText);
+        inputView.requestFocus();
+
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if(imm != null) {
-            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+            inputView.post(() -> imm.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT));
         }
-        findViewById(R.id.editTextControlKeyboardImmediately).requestFocus();
     }
     private void hideKeyboard(EditText et) {
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -418,7 +399,7 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
             mScannerView.startCamera();
         }
         if(findViewById(R.id.linearLayoutControlKeyboard).getVisibility() == View.VISIBLE
-                && ((CheckBox) findViewById(R.id.checkBoxControlKeyboardSendImmediately)).isChecked()) {
+                && findViewById(R.id.editTextControlKeyboardText).hasFocus()) {
             showKeyboard();
         }
     }
@@ -493,28 +474,27 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         }
     }
 
-    public void sendMessageFromTextBox(View v) {
-        if(fc != null && fc.unlockedKeyboard) {
-            EditText et = findViewById(R.id.editTextControlKeyboardText);
-            for(String line : et.getText().toString().split("\n")) {
-                sendMessage(line);
-                try {
-                    Thread.sleep(5);
-                } catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
+    private void sendImmediateText(String text) {
+        int segmentStart = 0;
+        for(int i = 0; i < text.length(); i++) {
+            if(text.charAt(i) == '\n') {
+                sendMessage(text.substring(segmentStart, i));
                 sendReturn();
-                try {
-                    Thread.sleep(5);
-                } catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
+                segmentStart = i + 1;
             }
-            et.setText("");
-        } else {
-            dialogInApp(getResources().getString(R.string.feature_locked_keyboard), getResources().getString(R.string.feature_locked_text));
         }
+        sendMessage(text.substring(segmentStart));
     }
+
+    private void clearKeyboardText() {
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        if(keyboardText.length() == 0) return;
+
+        ignoreKeyboardTextChanges = true;
+        keyboardText.setText("");
+        ignoreKeyboardTextChanges = false;
+    }
+
     public void sendMessage(String text) {
         if(!text.equals("")) {
             if(mTcpClient != null) mTcpClient.sendMessage("TEXT|"+text);
@@ -622,11 +602,6 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         setResult(Activity.RESULT_OK,returnIntent);
         finish();
     }
-
-    public void showSoftKeyboard(View v) {
-        showKeyboard();
-    }
-
 
     public class ConnectTask extends AsyncTask<String, String, TcpClient> {
 

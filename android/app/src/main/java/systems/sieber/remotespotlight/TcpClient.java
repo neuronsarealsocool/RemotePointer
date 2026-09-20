@@ -9,6 +9,9 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 class TcpClient {
 
@@ -25,6 +28,7 @@ class TcpClient {
     private boolean mRun = false;
     private PrintWriter mBufferOut;
     private BufferedReader mBufferIn;
+    private final ExecutorService mSendExecutor = Executors.newSingleThreadExecutor();
 
 
     TcpClient(String _address, int _port, OnMessageReceived receivedListener, OnConnectionClosed closedListener, OnConnectionFailed failedListener) {
@@ -36,22 +40,25 @@ class TcpClient {
     }
 
     void sendMessage(final String message) {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                if(mBufferOut != null) {
-                    Log.d(TAG, "Sending: " + message);
-                    mBufferOut.println(message);
-                    mBufferOut.flush();
+        try {
+            mSendExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if(mBufferOut != null) {
+                        Log.d(TAG, "Sending: " + message);
+                        mBufferOut.println(message);
+                        mBufferOut.flush();
+                    }
                 }
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
+            });
+        } catch(RejectedExecutionException ignored) {
+            // The connection is already shutting down.
+        }
     }
 
     void stopClient() {
         mRun = false;
+        mSendExecutor.shutdownNow();
 
         if(mBufferOut != null) {
             mBufferOut.flush();
