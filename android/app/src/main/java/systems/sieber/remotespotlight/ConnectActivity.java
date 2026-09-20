@@ -45,6 +45,8 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
     ListenForBroadcastTask broadcastListener;
     ListView listViewServer;
     List<ControlComputer> availComputers = new ArrayList<>();
+    boolean autoOpenPending = false;
+    boolean autoOpenedControl = false;
 
     final static String PREFS_NAME           = "remotepointer";
     private static final int broadcastPort   = 4445;
@@ -88,6 +90,10 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
             }
         });
 
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        autoOpenPending = !settings.getString("address", "").trim().isEmpty()
+                && !settings.getString("authCode", "").trim().isEmpty();
+
         final Thread thread = new Thread() {
             @Override
             public void run() {
@@ -107,6 +113,16 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
             }
         };
         thread.start();
+
+        if(autoOpenPending) {
+            autoOpenPending = false;
+            autoOpenedControl = true;
+            openControlActivity(
+                    settings.getString("address", ""),
+                    settings.getInt("port", controlPort),
+                    settings.getString("authCode", "")
+            );
+        }
     }
 
     @Override
@@ -119,7 +135,7 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
     @Override
     public void onPause() {
         super.onPause();
-        broadcastListener.cancel(true);
+        if(broadcastListener != null) broadcastListener.cancel(true);
     }
 
     @Override
@@ -155,9 +171,13 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == REQUEST_CONTROL) {
             if(resultCode == Activity.RESULT_OK) {
+                autoOpenedControl = false;
                 ControlActivity.messageType result = (ControlActivity.messageType) data.getSerializableExtra("result");
                 Log.e("messageType", result.toString());
                 connMessage(result);
+            } else if(autoOpenedControl) {
+                autoOpenedControl = false;
+                finish();
             }
         }
     }
