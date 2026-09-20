@@ -1,24 +1,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="systems.sieber.remotespotlight.ControlActivity">
-    <item
-        android:id="@+id/action_show_mouse"
-        android:title="@string/mouse"
-        android:icon="@drawable/ic_mouse_dynamic_24dp"
-        app:showAsAction="always"
-        tools:ignore="AlwaysShowAction" />
-    <item
-        android:id="@+id/action_open_keyboard"
-        android:title="@string/keyboard"
-        android:icon="@drawable/ic_keyboard_dynamic_128dp"
-        app:showAsAction="always"
-        tools:ignore="AlwaysShowAction" />
-    <item
-        android:id="@+id/action_start_scanner"
-        android:title="@string/scanner"
-        android:icon="@drawable/ic_barcode_reader_24dp"
-        app:showAsAction="always" />
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_sync_clipboard"
         android:title="@string/sync_clipboard"

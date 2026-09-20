@@ -29,9 +29,13 @@
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/constraintLayoutControlScanner"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <me.dm7.barcodescanner.zxing.ZXingScannerView
                 android:id="@+id/scannerView"
@@ -42,7 +46,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|center"
-                android:background="#66ffffff">
+                android:background="#CCFFFFFF">
 
                 <CheckBox
                     android:id="@+id/checkBoxControlScannerReturn"
@@ -54,271 +58,16 @@
             </LinearLayout>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-        <ScrollView
-            android:id="@+id/linearLayoutControlKeyboard"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <EditText
-                    android:id="@+id/editTextControlKeyboardText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/send_text_placeholder"
-                    android:importantForAutofill="no"
-                    android:imeOptions="flagNoExtractUi"
-                    android:inputType="textCapSentences|textAutoCorrect|textMultiLine"
-                    android:gravity="top|start"
-                    android:maxLines="3"
-                    android:minHeight="56dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="12dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="12dp"
-                    android:visibility="visible"
-                    tools:ignore="UnusedAttribute" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <Button
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1"
-                            android:onClick="sendEscape"
-                            android:textStyle="bold"
-                            android:textColor="@color/colorIcon"
-                            android:text="@string/escape_key" />
-                        <Space
-                            android:layout_width="@dimen/control_button_horizontal_space"
-                            android:layout_height="match_parent" />
-                        <ImageButton
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/up_arrow_key"
-                            android:onClick="sendUp"
-                            app:tint="@color/colorIcon"
-                            android:src="@drawable/ic_keyboard_arrow_up_dynamic_48dp" />
-                        <Space
-                            android:layout_width="@dimen/control_button_horizontal_space"
-                            android:layout_height="match_parent" />
-                        <Space
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <ImageButton
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/left_arrow_key"
-                            android:onClick="sendLeft"
-                            app:tint="@color/colorIcon"
-                            android:src="@drawable/ic_keyboard_arrow_left_dynamic_48dp" />
-                        <Space
-                            android:layout_width="@dimen/control_button_horizontal_space"
-                            android:layout_height="match_parent" />
-                        <ImageButton
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/down_arrow_key"
-                            android:onClick="sendDown"
-                            app:tint="@color/colorIcon"
-                            android:src="@drawable/ic_keyboard_arrow_down_dynamic_48dp" />
-                        <Space
-                            android:layout_width="@dimen/control_button_horizontal_space"
-                            android:layout_height="match_parent" />
-                        <ImageButton
-                            android:layout_width="0dp"
-                            android:layout_height="70dp"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/right_arrow_key"
-                            android:onClick="sendRight"
-                            app:tint="@color/colorIcon"
-                            android:src="@drawable/ic_keyboard_arrow_right_dynamic_48dp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="24dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ImageButton
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendMediaPrev"
-                        app:tint="@color/colorIcon"
-                        android:src="@drawable/ic_skip_previous_24dp"
-                        android:contentDescription="@string/previous" />
-
-                    <ImageButton
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendMediaPlayPause"
-                        app:tint="@color/colorIcon"
-                        android:src="@drawable/ic_play_pause_24dp"
-                        android:contentDescription="@string/play_pause" />
-
-                    <ImageButton
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendMediaNext"
-                        app:tint="@color/colorIcon"
-                        android:src="@drawable/ic_skip_next_24dp"
-                        android:contentDescription="@string/next" />
-                </LinearLayout>
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="24dp" />
-
-                <LinearLayout
-                    style="?android:attr/buttonBarStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF1"
-                        android:text="@string/f1" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF2"
-                        android:text="@string/f2" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF3"
-                        android:text="@string/f3" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF4"
-                        android:text="@string/f4" />
-                </LinearLayout>
-
-                <LinearLayout
-                    style="?android:attr/buttonBarStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF5"
-                        android:text="@string/f5" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF6"
-                        android:text="@string/f6" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF7"
-                        android:text="@string/f7" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF8"
-                        android:text="@string/f8" />
-                </LinearLayout>
-
-                <LinearLayout
-                    style="?android:attr/buttonBarStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF9"
-                        android:text="@string/f9" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF10"
-                        android:text="@string/f10" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF11"
-                        android:text="@string/f11" />
-
-                    <Button
-                        style="?android:attr/buttonBarButtonStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="70dp"
-                        android:layout_weight="1"
-                        android:onClick="sendF12"
-                        android:text="@string/f12" />
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-
         <LinearLayout
             android:id="@+id/linearLayoutControlDefaults"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:orientation="vertical"
-            android:visibility="visible">
+            android:visibility="visible"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <Space
                 android:layout_width="wrap_content"
@@ -336,33 +85,37 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:contentDescription="@string/page_up"
-                    app:tint="@color/colorIcon"
                     android:onClick="sendPrev"
                     android:src="@drawable/ic_navigate_before_dynamic_48dp"
+                    app:tint="@color/colorIcon"
                     tools:ignore="NestedWeights" />
+
                 <Space
                     android:layout_width="@dimen/control_button_horizontal_space"
                     android:layout_height="match_parent" />
+
                 <ImageButton
                     android:id="@+id/buttonSpotlight"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="35"
                     android:contentDescription="@string/show_pointer"
-                    app:tint="@color/colorIcon"
-                    android:src="@drawable/ic_filter_center_focus_dynamic_24dp" />
+                    android:src="@drawable/ic_filter_center_focus_dynamic_24dp"
+                    app:tint="@color/colorIcon" />
+
                 <Space
                     android:layout_width="@dimen/control_button_horizontal_space"
                     android:layout_height="match_parent" />
+
                 <ImageButton
                     android:id="@+id/buttonNext"
                     android:layout_width="90dp"
                     android:layout_height="match_parent"
                     android:layout_weight="10"
                     android:contentDescription="@string/page_down"
-                    app:tint="@color/colorIcon"
                     android:onClick="sendNext"
-                    android:src="@drawable/ic_navigate_next_dynamic_48dp" />
+                    android:src="@drawable/ic_navigate_next_dynamic_48dp"
+                    app:tint="@color/colorIcon" />
             </LinearLayout>
 
             <LinearLayout
@@ -374,11 +127,11 @@
                 <Button
                     android:id="@+id/buttonTouchpad"
                     style="@style/Widget.AppCompat.Button"
-                    android:textStyle="bold"
-                    android:textColor="@color/colorIcon"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="@string/touchpad" />
+                    android:text="@string/touchpad"
+                    android:textColor="@color/colorIcon"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <LinearLayout
@@ -392,29 +145,98 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:contentDescription="@string/mouse_click_left"
-                    app:tint="@color/colorIcon"
                     android:src="@drawable/ic_mouse_dynamic_24dp"
+                    app:tint="@color/colorIcon"
                     tools:ignore="NestedWeights" />
+
                 <Space
                     android:layout_width="@dimen/control_button_horizontal_space"
                     android:layout_height="match_parent" />
+
                 <ImageButton
                     android:id="@+id/buttonMouseRight"
                     android:layout_width="90dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:contentDescription="@string/mouse_click_right"
-                    app:tint="@color/colorIcon"
-                    android:src="@drawable/ic_mouse_dynamic_24dp" />
+                    android:src="@drawable/ic_mouse_dynamic_24dp"
+                    app:tint="@color/colorIcon" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!--
-                    <systems.sieber.remotespotlight.DemoView
-                        android:layout_width="match_parent"
-                        android:id="@+id/view_demo"
-                        android:layout_column="0"
-                        android:layout_row="1" />
-            -->
+        <EditText
+            android:id="@+id/editTextControlKeyboardText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/colorBackground"
+            android:elevation="9dp"
+            android:gravity="top|start"
+            android:hint="@string/send_text_placeholder"
+            android:importantForAutofill="no"
+            android:imeOptions="flagNoExtractUi"
+            android:inputType="textCapSentences|textAutoCorrect|textMultiLine"
+            android:maxLines="3"
+            android:minHeight="56dp"
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="UnusedAttribute" />
+
+        <LinearLayout
+            android:id="@+id/bottomNavigation"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:background="@color/colorBackground"
+            android:elevation="8dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageButton
+                android:id="@+id/buttonKeyboardMode"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/keyboard"
+                android:onClick="showKeyboardOverlay"
+                android:padding="18dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_keyboard_dynamic_128dp"
+                app:tint="@color/bottom_navigation_icon" />
+
+            <ImageButton
+                android:id="@+id/buttonMouseMode"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/mouse"
+                android:onClick="showMouseControls"
+                android:padding="18dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_mouse_dynamic_24dp"
+                app:tint="@color/bottom_navigation_icon" />
+
+            <ImageButton
+                android:id="@+id/buttonScannerMode"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/scanner"
+                android:onClick="showScannerControls"
+                android:padding="18dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_barcode_reader_24dp"
+                app:tint="@color/bottom_navigation_icon" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

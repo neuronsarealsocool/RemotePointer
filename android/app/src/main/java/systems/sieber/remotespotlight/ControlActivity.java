@@ -80,6 +80,7 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if(getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        updateBottomNavigationSelection(R.id.buttonMouseMode);
 
         // do feature check
         fc = new FeatureCheck(this);
@@ -122,7 +123,9 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.controlMainView), (view, insets) -> {
             boolean keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
-            if(keyboardWasVisible && !keyboardVisible) clearKeyboardText();
+            findViewById(R.id.bottomNavigation).setVisibility(
+                    keyboardVisible ? View.GONE : View.VISIBLE);
+            if(keyboardWasVisible && !keyboardVisible) dismissKeyboardOverlay();
             keyboardWasVisible = keyboardVisible;
             return insets;
         });
@@ -275,27 +278,6 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
-            case R.id.action_show_mouse:
-                findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.VISIBLE);
-                findViewById(R.id.linearLayoutControlKeyboard).setVisibility(View.GONE);
-                findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.GONE);
-                if(mScannerView != null) mScannerView.stopCamera();
-                hideKeyboard( (EditText)findViewById(R.id.editTextControlKeyboardText) );
-                break;
-            case R.id.action_open_keyboard:
-                findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.GONE);
-                findViewById(R.id.linearLayoutControlKeyboard).setVisibility(View.VISIBLE);
-                findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.GONE);
-                if(mScannerView != null) mScannerView.stopCamera();
-                showKeyboard();
-                break;
-            case R.id.action_start_scanner:
-                setupCamera();
-                findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.GONE);
-                findViewById(R.id.linearLayoutControlKeyboard).setVisibility(View.GONE);
-                findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.VISIBLE);
-                hideKeyboard( (EditText)findViewById(R.id.editTextControlKeyboardText) );
-                break;
             case R.id.action_sync_clipboard:
                 item.setChecked(!item.isChecked());
                 mSyncClipboard = item.isChecked();
@@ -309,6 +291,37 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
                 return super.onOptionsItemSelected(item);
         }
         return true;
+    }
+
+    public void showMouseControls(View view) {
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        hideKeyboard(keyboardText);
+        dismissKeyboardOverlay();
+        findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.VISIBLE);
+        findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.GONE);
+        if(mScannerView != null) mScannerView.stopCamera();
+        updateBottomNavigationSelection(R.id.buttonMouseMode);
+    }
+
+    public void showKeyboardOverlay(View view) {
+        if(fc == null || !fc.unlockedKeyboard) {
+            dialogInApp(getResources().getString(R.string.feature_locked_keyboard), getResources().getString(R.string.feature_locked_text));
+            return;
+        }
+
+        findViewById(R.id.editTextControlKeyboardText).setVisibility(View.VISIBLE);
+        updateBottomNavigationSelection(R.id.buttonKeyboardMode);
+        showKeyboard();
+    }
+
+    public void showScannerControls(View view) {
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        hideKeyboard(keyboardText);
+        dismissKeyboardOverlay();
+        setupCamera();
+        findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.GONE);
+        findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.VISIBLE);
+        updateBottomNavigationSelection(R.id.buttonScannerMode);
     }
 
     private void connect() {
@@ -373,9 +386,15 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK)
+        if(keyCode == KeyEvent.KEYCODE_BACK
+                && findViewById(R.id.editTextControlKeyboardText).getVisibility() == View.VISIBLE) {
+            EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+            hideKeyboard(keyboardText);
+            dismissKeyboardOverlay();
+            return true;
+        } else if(keyCode == KeyEvent.KEYCODE_BACK) {
             finish();
-        else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+        } else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             if(mTcpClient != null) mTcpClient.sendMessage("VOLUMEDOWN");
             return true;
         } else if(keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
@@ -398,10 +417,6 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
                 && mScannerView != null) {
             mScannerView.startCamera();
         }
-        if(findViewById(R.id.linearLayoutControlKeyboard).getVisibility() == View.VISIBLE
-                && findViewById(R.id.editTextControlKeyboardText).hasFocus()) {
-            showKeyboard();
-        }
     }
 
     @Override
@@ -419,7 +434,9 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     @Override
     public void onPause() {
         super.onPause();
-        hideKeyboard( (EditText)findViewById(R.id.editTextControlKeyboardText) );
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        hideKeyboard(keyboardText);
+        dismissKeyboardOverlay();
         if(mScannerView != null) mScannerView.stopCamera();
     }
 
@@ -495,6 +512,25 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         ignoreKeyboardTextChanges = false;
     }
 
+    private void dismissKeyboardOverlay() {
+        EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
+        clearKeyboardText();
+        keyboardText.clearFocus();
+        keyboardText.setVisibility(View.GONE);
+        keyboardWasVisible = false;
+
+        int selectedButton = findViewById(R.id.constraintLayoutControlScanner).getVisibility() == View.VISIBLE
+                ? R.id.buttonScannerMode
+                : R.id.buttonMouseMode;
+        updateBottomNavigationSelection(selectedButton);
+    }
+
+    private void updateBottomNavigationSelection(int selectedButton) {
+        findViewById(R.id.buttonMouseMode).setSelected(selectedButton == R.id.buttonMouseMode);
+        findViewById(R.id.buttonKeyboardMode).setSelected(selectedButton == R.id.buttonKeyboardMode);
+        findViewById(R.id.buttonScannerMode).setSelected(selectedButton == R.id.buttonScannerMode);
+    }
+
     public void sendMessage(String text) {
         if(!text.equals("")) {
             if(mTcpClient != null) mTcpClient.sendMessage("TEXT|"+text);
@@ -506,71 +542,11 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     public void sendBackspace() {
         if(mTcpClient != null) mTcpClient.sendMessage("BACKSPACE");
     }
-    public void sendEscape(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("ESCAPE");
-    }
-    public void sendUp(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("UP");
-    }
-    public void sendDown(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("DOWN");
-    }
-    public void sendLeft(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("LEFT");
-    }
-    public void sendRight(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("RIGHT");
-    }
     public void sendPrev(View v) {
         if(mTcpClient != null) mTcpClient.sendMessage("PREV");
     }
     public void sendNext(View v) {
         if(mTcpClient != null) mTcpClient.sendMessage("NEXT");
-    }
-    public void sendMediaPrev(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("PLAYPREV");
-    }
-    public void sendMediaPlayPause(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("PLAYPAUSE");
-    }
-    public void sendMediaNext(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("PLAYNEXT");
-    }
-    public void sendF1(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F1");
-    }
-    public void sendF2(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F2");
-    }
-    public void sendF3(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F3");
-    }
-    public void sendF4(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F4");
-    }
-    public void sendF5(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F5");
-    }
-    public void sendF6(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F6");
-    }
-    public void sendF7(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F7");
-    }
-    public void sendF8(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F8");
-    }
-    public void sendF9(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F9");
-    }
-    public void sendF10(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F10");
-    }
-    public void sendF11(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F11");
-    }
-    public void sendF12(View v) {
-        if(mTcpClient != null) mTcpClient.sendMessage("F12");
     }
 
     private final static int CAMERA_PERMISSION = 1;
