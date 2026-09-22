@@ -14,6 +14,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,7 +39,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.SeekBar;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.zxing.Result;
@@ -61,6 +69,27 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     boolean sendValues = false;
     boolean ignoreKeyboardTextChanges = false;
     boolean keyboardWasVisible = false;
+    boolean emptyRemote = false;
+    boolean editingRemote = false;
+
+    private RemoteRepository.Remote remote;
+    private RemoteRepository.RemoteButton selectedRemoteButton;
+    private FrameLayout remoteCanvas;
+    private Menu controlMenu;
+
+    private static final String[] BUTTON_ACTIONS = {
+            "Text", "Enter", "Backspace", "Escape", "Page up", "Page down",
+            "Arrow up", "Arrow down", "Arrow left", "Arrow right",
+            "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+            "Previous track", "Play / pause", "Next track", "Volume up", "Volume down", "Mute",
+            "Mouse left click", "Mouse right click"
+    };
+    private static final String[] BUTTON_COLORS = { "Charcoal", "Teal", "Blue", "Green", "Red", "Gold" };
+    private static final int[] BUTTON_COLOR_VALUES = {
+            Color.rgb(55, 71, 79), Color.rgb(0, 121, 107), Color.rgb(25, 118, 210),
+            Color.rgb(46, 125, 50), Color.rgb(198, 40, 40), Color.rgb(245, 166, 35)
+    };
+    private static final String[] BUTTON_SHAPES = { "Rectangle", "Rounded", "Oval" };
 
     String mAddress;
     int mPort;
@@ -78,9 +107,25 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
 
         // init toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
+        String remoteName = getIntent().getStringExtra(RemoteListActivity.EXTRA_REMOTE_NAME);
+        String remoteId = getIntent().getStringExtra(RemoteListActivity.EXTRA_REMOTE_ID);
+        remote = RemoteRepository.find(this, remoteId);
+        emptyRemote = remote != null
+                ? !remote.builtInMouse
+                : getIntent().getBooleanExtra(RemoteListActivity.EXTRA_EMPTY_REMOTE, false);
+        if(remoteName != null && !remoteName.trim().isEmpty()) toolbar.setTitle(remoteName);
         setSupportActionBar(toolbar);
         if(getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         updateBottomNavigationSelection(R.id.buttonMouseMode);
+        if(emptyRemote) {
+            findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.GONE);
+            findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.GONE);
+            findViewById(R.id.editTextControlKeyboardText).setVisibility(View.GONE);
+            remoteCanvas = findViewById(R.id.remoteCanvas);
+            remoteCanvas.setVisibility(View.VISIBLE);
+            remoteCanvas.post(this::renderRemoteButtons);
+            findViewById(R.id.buttonAddControl).setOnClickListener(view -> addRemoteButton());
+        }
 
         // do feature check
         fc = new FeatureCheck(this);
@@ -278,13 +323,27 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_control, menu);
+        controlMenu = menu;
         menu.findItem(R.id.action_sync_clipboard).setChecked(mSyncClipboard);
+        updateEditorMenu();
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
+            case R.id.action_edit_remote:
+                enterRemoteEditMode();
+                break;
+            case R.id.action_finish_editing:
+                finishRemoteEditMode();
+                break;
+            case R.id.action_button_settings:
+                if(selectedRemoteButton != null) showButtonSettings(selectedRemoteButton);
+                break;
+            case R.id.action_delete_button:
+                confirmDeleteSelectedButton();
+                break;
             case R.id.action_sync_clipboard:
                 item.setChecked(!item.isChecked());
                 mSyncClipboard = item.isChecked();
@@ -304,10 +363,313 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
         hideKeyboard(keyboardText);
         dismissKeyboardOverlay();
-        findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.VISIBLE);
+        findViewById(R.id.linearLayoutControlDefaults).setVisibility(
+                emptyRemote ? View.GONE : View.VISIBLE);
+        findViewById(R.id.remoteCanvas).setVisibility(emptyRemote ? View.VISIBLE : View.GONE);
         findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.GONE);
         if(mScannerView != null) mScannerView.stopCamera();
         updateBottomNavigationSelection(R.id.buttonMouseMode);
+    }
+
+    private void enterRemoteEditMode() {
+        if(!emptyRemote || remote == null) return;
+        editingRemote = true;
+        selectedRemoteButton = null;
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle(getString(R.string.editing_remote, remote.name));
+        findViewById(R.id.buttonAddControl).setVisibility(View.VISIBLE);
+        renderRemoteButtons();
+        updateEditorMenu();
+        Snackbar.make(findViewById(R.id.controlMainView), R.string.select_or_drag_button, Snackbar.LENGTH_LONG).show();
+    }
+
+    private void finishRemoteEditMode() {
+        if(remote == null) return;
+        editingRemote = false;
+        selectedRemoteButton = null;
+        findViewById(R.id.buttonAddControl).setVisibility(View.GONE);
+        ((Toolbar) findViewById(R.id.toolbar)).setTitle(remote.name);
+        RemoteRepository.saveRemote(this, remote);
+        renderRemoteButtons();
+        updateEditorMenu();
+    }
+
+    private void updateEditorMenu() {
+        if(controlMenu == null) return;
+        boolean canEdit = emptyRemote && remote != null;
+        controlMenu.findItem(R.id.action_edit_remote).setVisible(canEdit && !editingRemote);
+        controlMenu.findItem(R.id.action_finish_editing).setVisible(canEdit && editingRemote);
+        controlMenu.findItem(R.id.action_button_settings).setVisible(editingRemote && selectedRemoteButton != null);
+        controlMenu.findItem(R.id.action_delete_button).setVisible(editingRemote && selectedRemoteButton != null);
+    }
+
+    private void addRemoteButton() {
+        if(remote == null) return;
+        RemoteRepository.RemoteButton button = new RemoteRepository.RemoteButton();
+        float offset = (remote.buttons.size() % 5) * 0.06f;
+        button.x = Math.min(0.55f, 0.16f + offset);
+        button.y = Math.min(0.72f, 0.16f + offset);
+        remote.buttons.add(button);
+        selectedRemoteButton = button;
+        RemoteRepository.saveRemote(this, remote);
+        renderRemoteButtons();
+        updateEditorMenu();
+        showButtonSettings(button);
+    }
+
+    private void renderRemoteButtons() {
+        if(remoteCanvas == null || remote == null || remoteCanvas.getWidth() == 0 || remoteCanvas.getHeight() == 0) return;
+        remoteCanvas.removeAllViews();
+        for(RemoteRepository.RemoteButton buttonModel : remote.buttons) {
+            Button buttonView = new Button(this);
+            buttonView.setAllCaps(false);
+            buttonView.setText(buttonModel.label);
+            buttonView.setTextColor(contrastTextColor(buttonModel.color));
+            buttonView.setTextSize(16);
+            buttonView.setGravity(android.view.Gravity.CENTER);
+            buttonView.setBackground(buttonBackground(buttonModel,
+                    editingRemote && buttonModel == selectedRemoteButton));
+            buttonView.setTag(buttonModel);
+
+            int width = Math.max(dp(72), Math.round(remoteCanvas.getWidth() * buttonModel.width));
+            int height = Math.max(dp(52), Math.round(remoteCanvas.getHeight() * buttonModel.height));
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
+            buttonView.setLayoutParams(params);
+            buttonView.setX(buttonModel.x * Math.max(0, remoteCanvas.getWidth() - width));
+            buttonView.setY(buttonModel.y * Math.max(0, remoteCanvas.getHeight() - height));
+            buttonView.setOnClickListener(view -> {
+                if(editingRemote) {
+                    selectRemoteButton(buttonModel);
+                } else {
+                    sendRemoteButtonAction(buttonModel);
+                }
+            });
+            buttonView.setOnTouchListener(new RemoteButtonDragListener(buttonModel));
+            remoteCanvas.addView(buttonView);
+        }
+    }
+
+    private void selectRemoteButton(RemoteRepository.RemoteButton button) {
+        selectedRemoteButton = button;
+        renderRemoteButtons();
+        updateEditorMenu();
+    }
+
+    private void refreshRemoteButtonSelection() {
+        if(remoteCanvas == null) return;
+        for(int i = 0; i < remoteCanvas.getChildCount(); i++) {
+            View child = remoteCanvas.getChildAt(i);
+            Object tag = child.getTag();
+            if(tag instanceof RemoteRepository.RemoteButton) {
+                RemoteRepository.RemoteButton button = (RemoteRepository.RemoteButton) tag;
+                child.setBackground(buttonBackground(button, button == selectedRemoteButton));
+            }
+        }
+    }
+
+    private GradientDrawable buttonBackground(RemoteRepository.RemoteButton button, boolean selected) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(button.color);
+        if("Oval".equals(button.shape)) drawable.setCornerRadius(dp(999));
+        else if("Rounded".equals(button.shape)) drawable.setCornerRadius(dp(8));
+        else drawable.setCornerRadius(0);
+        if(selected) drawable.setStroke(dp(3), ContextCompat.getColor(this, R.color.colorSelection));
+        return drawable;
+    }
+
+    private int contrastTextColor(int backgroundColor) {
+        double luminance = 0.299 * Color.red(backgroundColor)
+                + 0.587 * Color.green(backgroundColor)
+                + 0.114 * Color.blue(backgroundColor);
+        return luminance > 170 ? Color.BLACK : Color.WHITE;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private final class RemoteButtonDragListener implements View.OnTouchListener {
+        private final RemoteRepository.RemoteButton button;
+        private float touchOffsetX;
+        private float touchOffsetY;
+        private float downX;
+        private float downY;
+        private boolean moved;
+
+        RemoteButtonDragListener(RemoteRepository.RemoteButton button) {
+            this.button = button;
+        }
+
+        @Override
+        public boolean onTouch(View view, MotionEvent event) {
+            if(!editingRemote) return false;
+            switch(event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    selectedRemoteButton = button;
+                    refreshRemoteButtonSelection();
+                    updateEditorMenu();
+                    touchOffsetX = event.getRawX() - view.getX();
+                    touchOffsetY = event.getRawY() - view.getY();
+                    downX = event.getRawX();
+                    downY = event.getRawY();
+                    moved = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float maxX = Math.max(0, remoteCanvas.getWidth() - view.getWidth());
+                    float maxY = Math.max(0, remoteCanvas.getHeight() - view.getHeight());
+                    view.setX(Math.max(0, Math.min(maxX, event.getRawX() - touchOffsetX)));
+                    view.setY(Math.max(0, Math.min(maxY, event.getRawY() - touchOffsetY)));
+                    moved = moved || Math.abs(event.getRawX() - downX) > dp(4)
+                            || Math.abs(event.getRawY() - downY) > dp(4);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    float availableX = remoteCanvas.getWidth() - view.getWidth();
+                    float availableY = remoteCanvas.getHeight() - view.getHeight();
+                    button.x = availableX <= 0 ? 0 : view.getX() / availableX;
+                    button.y = availableY <= 0 ? 0 : view.getY() / availableY;
+                    RemoteRepository.saveRemote(ControlActivity.this, remote);
+                    if(!moved) selectRemoteButton(button);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+    }
+
+    private void showButtonSettings(RemoteRepository.RemoteButton button) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_remote_button, null);
+        EditText labelInput = content.findViewById(R.id.editButtonLabel);
+        EditText valueInput = content.findViewById(R.id.editButtonValue);
+        Spinner actionSpinner = content.findViewById(R.id.spinnerButtonAction);
+        Spinner colorSpinner = content.findViewById(R.id.spinnerButtonColor);
+        Spinner shapeSpinner = content.findViewById(R.id.spinnerButtonShape);
+        SeekBar widthSeek = content.findViewById(R.id.seekButtonWidth);
+        SeekBar heightSeek = content.findViewById(R.id.seekButtonHeight);
+        TextView widthLabel = content.findViewById(R.id.textButtonWidth);
+        TextView heightLabel = content.findViewById(R.id.textButtonHeight);
+
+        labelInput.setText(button.label);
+        valueInput.setText(button.value);
+        setSpinner(actionSpinner, BUTTON_ACTIONS, indexOf(BUTTON_ACTIONS, button.action));
+        setSpinner(colorSpinner, BUTTON_COLORS, indexOf(BUTTON_COLOR_VALUES, button.color));
+        setSpinner(shapeSpinner, BUTTON_SHAPES, indexOf(BUTTON_SHAPES, button.shape));
+        widthSeek.setProgress(Math.max(0, Math.round(button.width * 100) - 20));
+        heightSeek.setProgress(Math.max(0, Math.round(button.height * 100) - 10));
+        updateSizeLabel(widthLabel, R.string.button_width, widthSeek.getProgress() + 20);
+        updateSizeLabel(heightLabel, R.string.button_height, heightSeek.getProgress() + 10);
+
+        actionSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                valueInput.setVisibility(position == 0 ? View.VISIBLE : View.GONE);
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) { }
+        });
+        widthSeek.setOnSeekBarChangeListener(sizeListener(widthLabel, R.string.button_width, 20));
+        heightSeek.setOnSeekBarChangeListener(sizeListener(heightLabel, R.string.button_height, 10));
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.button_settings)
+                .setView(content)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.save, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String label = labelInput.getText().toString().trim();
+            if(label.isEmpty()) {
+                labelInput.setError(getString(R.string.button_label));
+                return;
+            }
+            button.label = label;
+            button.action = BUTTON_ACTIONS[actionSpinner.getSelectedItemPosition()];
+            button.value = valueInput.getText().toString();
+            button.width = (widthSeek.getProgress() + 20) / 100f;
+            button.height = (heightSeek.getProgress() + 10) / 100f;
+            button.color = BUTTON_COLOR_VALUES[colorSpinner.getSelectedItemPosition()];
+            button.shape = BUTTON_SHAPES[shapeSpinner.getSelectedItemPosition()];
+            RemoteRepository.saveRemote(this, remote);
+            renderRemoteButtons();
+            dialog.dismiss();
+        }));
+        dialog.show();
+    }
+
+    private void setSpinner(Spinner spinner, String[] values, int selection) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, values);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(Math.max(0, selection));
+    }
+
+    private int indexOf(String[] values, String value) {
+        for(int i = 0; i < values.length; i++) if(values[i].equals(value)) return i;
+        return 0;
+    }
+
+    private int indexOf(int[] values, int value) {
+        for(int i = 0; i < values.length; i++) if(values[i] == value) return i;
+        return 0;
+    }
+
+    private void updateSizeLabel(TextView label, int stringResource, int value) {
+        label.setText(getString(stringResource, value));
+    }
+
+    private SeekBar.OnSeekBarChangeListener sizeListener(TextView label, int stringResource, int offset) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                updateSizeLabel(label, stringResource, progress + offset);
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+        };
+    }
+
+    private void confirmDeleteSelectedButton() {
+        if(selectedRemoteButton == null || remote == null) return;
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.delete_button_confirmation)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete_button, (dialog, which) -> {
+                    remote.buttons.remove(selectedRemoteButton);
+                    selectedRemoteButton = null;
+                    RemoteRepository.saveRemote(this, remote);
+                    renderRemoteButtons();
+                    updateEditorMenu();
+                })
+                .show();
+    }
+
+    private void sendRemoteButtonAction(RemoteRepository.RemoteButton button) {
+        String command;
+        switch(button.action) {
+            case "Text": command = "TEXT|" + button.value; break;
+            case "Enter": command = "RETURN"; break;
+            case "Backspace": command = "BACKSPACE"; break;
+            case "Escape": command = "ESCAPE"; break;
+            case "Page up": command = "PREV"; break;
+            case "Page down": command = "NEXT"; break;
+            case "Arrow up": command = "UP"; break;
+            case "Arrow down": command = "DOWN"; break;
+            case "Arrow left": command = "LEFT"; break;
+            case "Arrow right": command = "RIGHT"; break;
+            case "Previous track": command = "PLAYPREV"; break;
+            case "Play / pause": command = "PLAYPAUSE"; break;
+            case "Next track": command = "PLAYNEXT"; break;
+            case "Volume up": command = "VOLUMEUP"; break;
+            case "Volume down": command = "VOLUMEDOWN"; break;
+            case "Mute": command = "MUTE"; break;
+            case "Mouse left click": command = "MLEFT"; break;
+            case "Mouse right click": command = "MRIGHT"; break;
+            default: command = button.action.startsWith("F") ? button.action : ""; break;
+        }
+        if(!command.isEmpty() && mTcpClient != null) mTcpClient.sendMessage(command);
     }
 
     public void showKeyboardOverlay(View view) {
@@ -327,6 +689,7 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
         dismissKeyboardOverlay();
         setupCamera();
         findViewById(R.id.linearLayoutControlDefaults).setVisibility(View.GONE);
+        findViewById(R.id.remoteCanvas).setVisibility(View.GONE);
         findViewById(R.id.constraintLayoutControlScanner).setVisibility(View.VISIBLE);
         updateBottomNavigationSelection(R.id.buttonScannerMode);
     }
@@ -398,6 +761,9 @@ public class ControlActivity extends AppCompatActivity implements ZXingScannerVi
             EditText keyboardText = findViewById(R.id.editTextControlKeyboardText);
             hideKeyboard(keyboardText);
             dismissKeyboardOverlay();
+            return true;
+        } else if(keyCode == KeyEvent.KEYCODE_BACK && editingRemote) {
+            finishRemoteEditMode();
             return true;
         } else if(keyCode == KeyEvent.KEYCODE_BACK) {
             finish();

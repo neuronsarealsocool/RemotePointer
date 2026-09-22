@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <EditText
+            android:id="@+id/editButtonLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/button_label"
+            android:inputType="textCapSentences"
+            android:maxLines="1" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/button_action"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerButtonAction"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+
+        <EditText
+            android:id="@+id/editButtonValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/text_to_send"
+            android:inputType="text"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/textButtonWidth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/seekButtonWidth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="70" />
+
+        <TextView
+            android:id="@+id/textButtonHeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/seekButtonHeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="35" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/button_color"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerButtonColor"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/button_shape"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerButtonShape"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+    </LinearLayout>
+</ScrollView>

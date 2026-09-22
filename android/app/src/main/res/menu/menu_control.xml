@@ -1,6 +1,28 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_edit_remote"
+        android:icon="@drawable/ic_edit_24dp"
+        android:title="@string/edit_remote"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_finish_editing"
+        android:icon="@drawable/ic_done_24dp"
+        android:title="@string/done"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_button_settings"
+        android:title="@string/button_settings"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_delete_button"
+        android:title="@string/delete_button"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_sync_clipboard"
         android:title="@string/sync_clipboard"
         android:checkable="true"

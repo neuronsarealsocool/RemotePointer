@@ -47,6 +47,10 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
     List<ControlComputer> availComputers = new ArrayList<>();
     boolean autoOpenPending = false;
     boolean autoOpenedControl = false;
+    boolean returnToRemoteList = false;
+    boolean selectedRemoteIsEmpty = false;
+    String selectedRemoteName;
+    String selectedRemoteId;
 
     final static String PREFS_NAME           = "remotepointer";
     private static final int broadcastPort   = 4445;
@@ -59,6 +63,11 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
         setContentView(R.layout.activity_conn);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        returnToRemoteList = getIntent().getBooleanExtra(RemoteListActivity.EXTRA_RETURN_TO_REMOTE_LIST, false);
+        selectedRemoteIsEmpty = getIntent().getBooleanExtra(RemoteListActivity.EXTRA_EMPTY_REMOTE, false);
+        selectedRemoteName = getIntent().getStringExtra(RemoteListActivity.EXTRA_REMOTE_NAME);
+        selectedRemoteId = getIntent().getStringExtra(RemoteListActivity.EXTRA_REMOTE_ID);
 
         // init welcome text with app version
         TextView textViewConnectInfo = findViewById(R.id.textViewConnectInfo);
@@ -91,7 +100,8 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
         });
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        autoOpenPending = !settings.getString("address", "").trim().isEmpty()
+        autoOpenPending = !getIntent().getBooleanExtra(RemoteListActivity.EXTRA_DISABLE_AUTO_OPEN, false)
+                && !settings.getString("address", "").trim().isEmpty()
                 && !settings.getString("authCode", "").trim().isEmpty();
 
         final Thread thread = new Thread() {
@@ -175,7 +185,8 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
                 ControlActivity.messageType result = (ControlActivity.messageType) data.getSerializableExtra("result");
                 Log.e("messageType", result.toString());
                 connMessage(result);
-            } else if(autoOpenedControl) {
+                if(returnToRemoteList && result == ControlActivity.messageType.normalExit) finish();
+            } else if(autoOpenedControl || returnToRemoteList) {
                 autoOpenedControl = false;
                 finish();
             }
@@ -305,6 +316,13 @@ public class ConnectActivity extends AppCompatActivity implements NavigationView
         controlIntent.putExtra("address", address);
         controlIntent.putExtra("port", port);
         controlIntent.putExtra("authCode", authCode);
+        if(selectedRemoteName != null) {
+            controlIntent.putExtra(RemoteListActivity.EXTRA_REMOTE_NAME, selectedRemoteName);
+        }
+        if(selectedRemoteId != null) {
+            controlIntent.putExtra(RemoteListActivity.EXTRA_REMOTE_ID, selectedRemoteId);
+        }
+        controlIntent.putExtra(RemoteListActivity.EXTRA_EMPTY_REMOTE, selectedRemoteIsEmpty);
         startActivityForResult(controlIntent, REQUEST_CONTROL);
     }
 

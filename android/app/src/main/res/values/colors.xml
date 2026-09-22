@@ -8,4 +8,6 @@
     <color name="colorIcon">#37474f</color>
     <color name="colorTextLink">@color/colorAccent</color>
     <color name="colorBackground">#fafafa</color>
+    <color name="colorRemoteCanvas">#ECEFF1</color>
+    <color name="colorSelection">#00A896</color>
 </resources>

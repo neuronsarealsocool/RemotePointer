@@ -3,4 +3,6 @@
     <color name="colorAccent">#819ca9</color>
     <color name="colorIcon">#eee</color>
     <color name="colorBackground">#181818</color>
+    <color name="colorRemoteCanvas">#202427</color>
+    <color name="colorSelection">#43D7C5</color>
 </resources>
